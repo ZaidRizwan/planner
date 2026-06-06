@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Planner Widget</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1a1d27;
+    --surface: #22263a;
+    --border: #2e3250;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+
+  html, body {
+    height: 100%;
+    background: transparent;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    -webkit-app-region: no-drag;
+    user-select: none;
+  }
+
+  .widget {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  /* ── title bar (draggable) ── */
+  .titlebar {
+    -webkit-app-region: drag;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .titlebar-logo { font-size: 14px; font-weight: 700; color: var(--accent); flex: 1; }
+  .titlebar-sub  { font-size: 11px; color: var(--text3); }
+  .titlebar-btn {
+    -webkit-app-region: no-drag;
+    width: 28px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .titlebar-btn:hover { background: var(--border); color: var(--text); }
+
+  /* ── streak bar ── */
+  .streak-bar {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .streak-pill {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 700; color: var(--yellow);
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 20px; padding: 3px 10px;
+  }
+  .date-label { font-size: 11px; color: var(--text3); }
+
+  /* ── progress bar ── */
+  .progress-wrap {
+    height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; flex-shrink: 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #8b5cf6);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── section ── */
+  .section { overflow-y: auto; flex: 1; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 4px;
+    font-size: 10.5px; font-weight: 700;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px;
+    position: sticky; top: 0; background: var(--bg); z-index: 1;
+  }
+  .section-count { font-size: 10px; color: var(--accent); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── task item ── */
+  .task-item {
+    display: flex; align-items: flex-start; gap: 9px;
+    padding: 7px 12px;
+    transition: background 0.12s;
+    cursor: default;
+  }
+  .task-item:hover { background: var(--surface); }
+  .task-item.done .task-text { text-decoration: line-through; color: var(--text3); }
+
+  .checkbox {
+    width: 16px; height: 16px; min-width: 16px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .checkbox.checked { background: var(--green); border-color: var(--green); }
+  .checkbox-inner { width: 8px; height: 8px; }
+
+  .task-text {
+    flex: 1; font-size: 12.5px; color: var(--text); line-height: 1.4;
+    word-break: break-word;
+  }
+  .sub-info { font-size: 10.5px; color: var(--text3); margin-top: 2px; }
+
+  .empty-msg {
+    padding: 20px 12px; text-align: center;
+    font-size: 12px; color: var(--text3); line-height: 1.6;
+  }
+
+  /* ── open-main link ── */
+  .open-link {
+    font-size: 10.5px; color: var(--accent);
+    cursor: pointer; text-decoration: none;
+    padding: 2px 6px; border-radius: 4px;
+    transition: background 0.12s;
+  }
+  .open-link:hover { background: rgba(99,102,241,0.1); }
+
+  /* ── quick add ── */
+  .quick-add {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .quick-row { display: flex; gap: 6px; }
+  .quick-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .quick-input:focus { border-color: var(--accent); }
+  .quick-input::placeholder { color: var(--text3); }
+  .quick-btn {
+    background: var(--accent);
+    border: none; border-radius: 7px;
+    color: #fff; font-size: 16px; font-weight: 700;
+    width: 32px; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .quick-btn:hover { opacity: 0.85; }
+
+  /* ── tabs ── */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1; padding: 7px 4px;
+    font-size: 11.5px; font-weight: 600;
+    color: var(--text3); background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="widget">
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div>
+      <div class="titlebar-logo">◈ Planner</div>
+    </div>
+    <div id="dateLabel" class="date-label"></div>
+    <button class="titlebar-btn" title="Open Planner" onclick="openMain()">⊞</button>
+    <button class="titlebar-btn" title="Hide widget (Alt+W)" onclick="hideWidget()">✕</button>
+  </div>
+
+  <!-- Streak -->
+  <div class="streak-bar">
+    <div id="streakPill" class="streak-pill" style="display:none">🔥 <span id="streakCount">0</span> day streak</div>
+    <div id="noStreak" style="font-size:11px;color:var(--text3)">No active streak yet</div>
+    <div id="progressLabel" style="font-size:11px;color:var(--text2)">0/0</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('daily')" id="tab-daily">📋 Today</button>
+    <button class="tab-btn" onclick="switchTab('tasks')"  id="tab-tasks">📌 Tasks</button>
+    <button class="tab-btn" onclick="switchTab('notes')"  id="tab-notes">📝 Notes</button>
+  </div>
+
+  <!-- Content -->
+  <div class="section" id="content"></div>
+
+  <!-- Quick add -->
+  <div class="quick-add">
+    <div class="quick-row">
+      <input class="quick-input" id="quickInput" placeholder="Add to today's checklist…" />
+      <button class="quick-btn" onclick="quickAdd()">+</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'planner_data'
+  let currentTab = 'daily'
+  let data = null
+
+  // ── helpers ──────────────────────────────────────────────────────────────────
+  function todayKey() {
+    return new Date().toISOString().slice(0, 10)
+  }
+
+  function uid() {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36)
+  }
+
+  function formatDate() {
+    return new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
+  // ── data I/O ─────────────────────────────────────────────────────────────────
+  async function loadData() {
+    try {
+      // Try IPC first (gets data from main window's localStorage)
+      if (window.electronAPI) {
+        const raw = await window.electronAPI.getData()
+        if (raw) { data = JSON.parse(raw); return }
+      }
+      // Fallback: read own localStorage (works in production same-origin)
+      const raw = localStorage.getItem(STORAGE_KEY)
+      data = raw ? JSON.parse(raw) : { goals:[], targets:[], notes:[], dailyChecklists:{}, tasks:[], someday:[], streak:{ current:0, longest:0 } }
+    } catch {
+      data = { goals:[], targets:[], notes:[], dailyChecklists:{}, tasks:[], someday:[], streak:{ current:0, longest:0 } }
+    }
+  }
+
+  async function saveData() {
+    try {
+      const json = JSON.stringify(data)
+      if (window.electronAPI) {
+        await window.electronAPI.setData(json)
+      } else {
+        localStorage.setItem(STORAGE_KEY, json)
+      }
+    } catch(e) { console.error(e) }
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────────
+  function render() {
+    if (!data) return
+    const today = todayKey()
+    const list  = data.dailyChecklists?.[today] || []
+    const done  = list.filter(i => i.done).length
+    const total = list.length
+    const streak = data.streak || { current: 0 }
+
+    // header
+    document.getElementById('dateLabel').textContent = formatDate()
+
+    // streak
+    if (streak.current > 0) {
+      document.getElementById('streakPill').style.display = 'flex'
+      document.getElementById('noStreak').style.display = 'none'
+      document.getElementById('streakCount').textContent = streak.current
+    } else {
+      document.getElementById('streakPill').style.display = 'none'
+      document.getElementById('noStreak').style.display = 'block'
+    }
+
+    // progress
+    document.getElementById('progressLabel').textContent = `${done}/${total}`
+    document.getElementById('progressBar').style.width = total ? `${(done/total)*100}%` : '0%'
+
+    // tab content
+    renderTab()
+  }
+
+  function renderTab() {
+    const content = document.getElementById('content')
+    if (currentTab === 'daily') renderDaily(content)
+    else if (currentTab === 'tasks') renderTasks(content)
+    else renderNotes(content)
+  }
+
+  function renderDaily(content) {
+    const today = todayKey()
+    const list  = (data.dailyChecklists?.[today] || [])
+
+    let html = `<div class="section-header">
+      <span>Today's Tasks</span>
+      <a class="open-link" onclick="openMain('daily')">Open →</a>
+    </div>`
+
+    if (!list.length) {
+      html += `<div class="empty-msg">No tasks today.<br>Add one below or open the app.</div>`
+    } else {
+      list.forEach(item => {
+        const subs = item.subtasks || []
+        const subDone = subs.filter(s => s.done).length
+        const subInfo = subs.length ? `<div class="sub-info">${subDone}/${subs.length} subtasks</div>` : ''
+        html += `<div class="task-item${item.done ? ' done' : ''}" data-id="${item.id}">
+          <div class="checkbox${item.done ? ' checked' : ''}" onclick="toggleItem('${item.id}')">
+            ${item.done ? '<svg class="checkbox-inner" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>' : ''}
+          </div>
+          <div>
+            <div class="task-text">${escHtml(item.text)}</div>
+            ${subInfo}
+          </div>
+        </div>`
+      })
+    }
+
+    content.innerHTML = html
+  }
+
+  function renderTasks(content) {
+    const open = (data.tasks || []).filter(t => t.status !== 'done').slice(0, 12)
+    let html = `<div class="section-header">
+      <span>Open Tasks</span>
+      <a class="open-link" onclick="openMain('tasks')">Open →</a>
+    </div>`
+
+    if (!open.length) {
+      html += `<div class="empty-msg">No open tasks.<br>Everything's done! 🎉</div>`
+    } else {
+      const statusDot = { todo: 'var(--text3)', progress: 'var(--yellow)', done: 'var(--green)' }
+      const priDot    = { high: 'var(--red)', medium: 'var(--yellow)', low: 'var(--green)' }
+      open.forEach(t => {
+        html += `<div class="task-item" style="cursor:default">
+          <div style="width:8px;height:8px;border-radius:50%;background:${statusDot[t.status]||'var(--text3)'};margin-top:4px;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div class="task-text" style="color:var(--text)">${escHtml(t.title)}</div>
+            <div class="sub-info">
+              <span style="color:${priDot[t.priority]||'var(--text3)'}">${t.priority}</span>
+              ${t.dueDate ? ` · Due ${t.dueDate}` : ''}
+            </div>
+          </div>
+        </div>`
+      })
+    }
+    content.innerHTML = html
+  }
+
+  function renderNotes(content) {
+    const notes = [...(data.notes || [])].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8)
+    let html = `<div class="section-header">
+      <span>Recent Notes</span>
+      <a class="open-link" onclick="openMain('notes')">Open →</a>
+    </div>`
+
+    if (!notes.length) {
+      html += `<div class="empty-msg">No notes yet.</div>`
+    } else {
+      notes.forEach(n => {
+        const preview = (n.body || '').slice(0, 60)
+        html += `<div class="task-item" onclick="openMain('notes')" style="cursor:pointer;flex-direction:column;gap:2px">
+          <div class="task-text" style="font-weight:600">${escHtml(n.title)}</div>
+          ${preview ? `<div class="sub-info">${escHtml(preview)}${n.body.length > 60 ? '…' : ''}</div>` : ''}
+        </div>`
+      })
+    }
+    content.innerHTML = html
+  }
+
+  // ── interactions ──────────────────────────────────────────────────────────────
+  async function toggleItem(itemId) {
+    const today = todayKey()
+    const list  = data.dailyChecklists?.[today] || []
+    data.dailyChecklists[today] = list.map(i =>
+      i.id === itemId ? { ...i, done: !i.done } : i
+    )
+    await saveData()
+    render()
+  }
+
+  async function quickAdd() {
+    const input = document.getElementById('quickInput')
+    const text  = input.value.trim()
+    if (!text) return
+    const today = todayKey()
+    if (!data.dailyChecklists) data.dailyChecklists = {}
+    if (!data.dailyChecklists[today]) data.dailyChecklists[today] = []
+    data.dailyChecklists[today].push({ id: uid(), text, done: false, subtasks: [], createdAt: new Date().toISOString() })
+    input.value = ''
+    await saveData()
+    render()
+  }
+
+  function switchTab(tab) {
+    currentTab = tab
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+    document.getElementById('tab-' + tab).classList.add('active')
+    // update quick-add placeholder
+    const placeholders = { daily: "Add to today's checklist…", tasks: "Quick-add a task…", notes: "Quick note…" }
+    document.getElementById('quickInput').placeholder = placeholders[tab]
+    renderTab()
+  }
+
+  function hideWidget() {
+    if (window.electronAPI) window.electronAPI.hide()
+    else window.close()
+  }
+
+  function openMain(page) {
+    if (window.electronAPI) window.electronAPI.openMain(page)
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  // ── keyboard ──────────────────────────────────────────────────────────────────
+  document.getElementById('quickInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') quickAdd()
+    if (e.key === 'Escape') document.getElementById('quickInput').blur()
+  })
+
+  // ── init + live refresh ───────────────────────────────────────────────────────
+  async function init() {
+    await loadData()
+    render()
+  }
+
+  // Listen for changes from main window via IPC
+  if (window.electronAPI) {
+    window.electronAPI.onDataChanged(async () => {
+      await loadData()
+      render()
+    })
+  }
+
+  // Also listen for localStorage storage events (same-origin, production)
+  window.addEventListener('storage', async e => {
+    if (e.key === 'planner_data') {
+      await loadData()
+      render()
+    }
+  })
+
+  // Refresh every 30 seconds as a fallback
+  setInterval(async () => {
+    await loadData()
+    render()
+  }, 30000)
+
+  init()
+</script>
+</body>
+</html>

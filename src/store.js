@@ -30,7 +30,34 @@ function save(data) {
 
 export function useStore() {
   const [data, setData] = useState(load)
-  useEffect(() => { save(data) }, [data])
+
+  // Persist to localStorage whenever data changes, then notify widget via Electron IPC
+  useEffect(() => {
+    save(data)
+    if (window.electronAPI?.notifyDataChanged) {
+      window.electronAPI.notifyDataChanged()
+    }
+  }, [data])
+
+  // When the widget modifies localStorage (via IPC), re-read here so React re-renders
+  useEffect(() => {
+    // Electron IPC path
+    let cleanup
+    if (window.electronAPI?.onDataChanged) {
+      cleanup = window.electronAPI.onDataChanged(() => {
+        setData(load())
+      })
+    }
+    // Same-origin storage event path (production, both on file://)
+    function onStorage(e) {
+      if (e.key === STORAGE_KEY) setData(load())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      if (cleanup) cleanup()
+    }
+  }, [])
 
   function update(fn) { setData(prev => fn(prev)) }
 

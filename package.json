@@ -1,12 +1,17 @@
 {
   "name": "planner",
+  "productName": "Planner",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "A powerful personal planner with goals, tasks, daily checklists, streaks and more.",
+  "author": "Zaid Rizwan",
+  "main": "electron/main.js",
+  "type": "commonjs",
   "scripts": {
-    "dev": "vite",
+    "dev:vite": "vite",
+    "dev": "concurrently -k \"npm run dev:vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "build": "vite build",
-    "lint": "eslint .",
+    "build:exe": "npm run build && electron-builder --win",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,14 +20,63 @@
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@electron/packager": "^20.0.1",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^10.0.3",
+    "cross-env": "^7.0.3",
+    "electron": "^32.0.0",
+    "electron-builder": "^26.15.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.zaidrizwan.planner",
+    "productName": "Planner",
+    "copyright": "© 2026 Zaid Rizwan",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Planner"
+    },
+    "portable": {
+      "artifactName": "Planner-Portable.exe"
+    }
   }
 }

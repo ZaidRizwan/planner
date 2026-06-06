@@ -22,6 +22,15 @@ export default function App() {
   const [showReview, setShowReview] = useState(false)
   const store = useStore()
 
+  // ── Electron IPC listeners (tray menu / global shortcuts from main process) ──
+  useEffect(() => {
+    if (!window.electronAPI) return
+    const c1 = window.electronAPI.onOpenBrainDump?.(() => setShowDump(true))
+    const c2 = window.electronAPI.onOpenFocus?.(() => setShowFocus(true))
+    const c3 = window.electronAPI.onNavigateTo?.((p) => navigate(p))
+    return () => { c1?.(); c2?.(); c3?.() }
+  }, [])
+
   // ── global hotkeys ─────────────────────────────────────────────────────────
   useEffect(() => {
     function handler(e) {
