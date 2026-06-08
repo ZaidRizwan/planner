@@ -1,0 +1,54 @@
+name: Build Android APK
+
+# Builds an installable debug APK on GitHub's Linux runners — no Android Studio
+# or local SDK needed. Trigger manually from the Actions tab, or by pushing a
+# version tag like v1.0.0.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # JDK 21 — required by Android Gradle Plugin 8.13.
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Builds the Vite web app and copies it into the native Android project.
+      - name: Build web app and sync to Android
+        run: npm run build:android
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Planner-Android-APK
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

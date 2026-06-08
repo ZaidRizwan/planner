@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.55" stop-color="#863bff"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <g stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="300" y="300" width="104" height="104" rx="30"/>
+    <path d="M330 352 L353 376 L392 324"/>
+    <rect x="300" y="460" width="104" height="104" rx="30"/>
+    <path d="M330 512 L353 536 L392 484"/>
+    <rect x="300" y="620" width="104" height="104" rx="30"/>
+  </g>
+
+  <g fill="#ffffff">
+    <rect x="452" y="322" width="268" height="60" rx="30"/>
+    <rect x="452" y="482" width="268" height="60" rx="30"/>
+    <rect x="452" y="642" width="200" height="60" rx="30" fill-opacity="0.85"/>
+  </g>
+
+  <g fill="#ffffff">
+    <path d="M732 232
+             C732 286 742 296 796 296
+             C742 296 732 306 732 360
+             C732 306 722 296 668 296
+             C722 296 732 286 732 232 Z"/>
+    <path d="M818 330
+             C818 358 823 363 851 363
+             C823 363 818 368 818 396
+             C818 368 813 363 785 363
+             C813 363 818 358 818 330 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+{
+  "appId": "com.zaidrizwan.planner",
+  "appName": "Planner",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

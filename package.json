@@ -12,14 +12,20 @@
     "dev": "concurrently -k \"npm run dev:vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
     "build": "vite build",
     "build:exe": "npm run build && electron-builder --win",
+    "build:android": "npm run build && cap sync android",
+    "android:open": "cap open android",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
     "@electron/packager": "^20.0.1",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
